@@ -9,12 +9,16 @@ import (
 	pb "github.com/hyperledger/fabric/protos/peer"
 )
 
+const (
+	BU = "Blockcoderz"
+)
+
 // SimpleChaincode example simple Chaincode implementation
 type SimpleChaincode struct {
 }
 
 type student struct {
-	PR_no             int    `json:"PR_no"`
+	PR_no             string `json:"PR_no"`
 	First_Name        string `json:"First_Name"`
 	Middle_Name       string `json:"Middle_Name "`
 	Last_Name         string `json:"Last_Name"`
@@ -22,11 +26,11 @@ type student struct {
 	Branch            string `json:"Branch"`
 	Year_Of_Admission string `json:"Year_Of_Admission"`
 	Email_Id          string `json:"Email_Id"`
-	Mobile            int    `json:"Mobile"`
+	Mobile            string `json:"Mobile"`
 }
 
 type cert struct {
-	PR_no           int    `json:"PR_no"`
+	PR_no           string `json:"PR_no"`
 	Student_Name    string `json:"Student_Name"`
 	College_Name    string `json:"College_Name"`
 	Seat_no         string `json:"Seat_no"`
@@ -73,7 +77,7 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 // ========================================
 // add student details
-// PR_no(int),First_Name,Middle_Name,Last_Name,College_Name,Branch,Year_Of_Admission,Email_Id,Mobile(int)
+// PR_no,First_Name,Middle_Name,Last_Name,College_Name,Branch,Year_Of_Admission,Email_Id,Mobile
 func (t *SimpleChaincode) addStudent(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 
 	if len(args) != 9 {
@@ -110,10 +114,7 @@ func (t *SimpleChaincode) addStudent(stub shim.ChaincodeStubInterface, args []st
 		return shim.Error("9 argument must be a non-empty string")
 	}
 
-	PRno, err := strconv.Atoi(args[0])
-	if err != nil {
-		return shim.Error("1 argument must be a numeric string")
-	}
+	PRno := args[0]
 	FName := args[1]
 	MName := args[2]
 	LName := args[3]
@@ -121,10 +122,7 @@ func (t *SimpleChaincode) addStudent(stub shim.ChaincodeStubInterface, args []st
 	branch := args[5]
 	YOA := args[6]
 	EId := args[7]
-	mobile, err := strconv.Atoi(args[8])
-	if err != nil {
-		return shim.Error("9 argument must be a numeric string")
-	}
+	mobile := args[8]
 
 	// ==== Check if Student already exists ====
 	studentAsBytes, err := stub.GetState(PRno)
@@ -176,7 +174,7 @@ func (t *SimpleChaincode) readStudent(stub shim.ChaincodeStubInterface, arg stri
 }
 
 // add certificate details
-//PR_no(int),Student_Name,Seat_no,Examination,Year_Of_Passing,Sub
+//PR_no,Student_Name,Seat_no,Examination,Year_Of_Passing,Sub
 func (t *SimpleChaincode) addCert(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 
 	if len(args) != 6 {
@@ -204,10 +202,7 @@ func (t *SimpleChaincode) addCert(stub shim.ChaincodeStubInterface, args []strin
 		return shim.Error("6 argument must be a non-empty string")
 	}
 
-	PRno, err := strconv.Atoi(args[0])
-	if err != nil {
-		return shim.Error("1 argument must be a numeric string")
-	}
+	PRno := args[0]
 	SName := args[1]
 	Seatno := args[2]
 	examination := args[3]
@@ -243,7 +238,7 @@ func (t *SimpleChaincode) addCert(stub shim.ChaincodeStubInterface, args []strin
 }
 
 // ===============================================
-// readStudent - read a certificate from chaincode state
+// readcert - read a certificate from chaincode state
 func (t *SimpleChaincode) readcert(stub shim.ChaincodeStubInterface, arg string) pb.Response {
 	var name, jsonResp string
 	var err error
@@ -263,23 +258,27 @@ func (t *SimpleChaincode) readcert(stub shim.ChaincodeStubInterface, arg string)
 	}
 	return shim.Success(valAsbytes)
 }
+
+// ========================================================================
+// transferCert - transfer ownership of cert from BlockCoderz to Student
 func (t *SimpleChaincode) transferCert(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 
 	//   0       1
-	// "Seatno", "Sname"
+	// "Seatno", "SName"
 	if len(args) < 2 {
 		return shim.Error("Incorrect number of arguments. Expecting 2")
 	}
 
 	Seatno := args[0]
 	SName := args[1]
-	fmt.Println("- start transferMarble ", Seatno, SName)
+
+	fmt.Println("- start transferCert ", BU, Seatno, SName)
 
 	certAsBytes, err := stub.GetState(Seatno)
 	if err != nil {
-		return shim.Error("Failed to get marble:" + err.Error())
+		return shim.Error("Failed to get Certificate:" + err.Error())
 	} else if certAsBytes == nil {
-		return shim.Error("Marble does not exist")
+		return shim.Error("Certificate does not exist")
 	}
 
 	certToTransfer := cert{}
@@ -295,6 +294,6 @@ func (t *SimpleChaincode) transferCert(stub shim.ChaincodeStubInterface, args []
 		return shim.Error(err.Error())
 	}
 
-	fmt.Println("- end transferMarble (success)")
+	fmt.Println("- end transferCert (success)")
 	return shim.Success(nil)
 }
